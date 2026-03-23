@@ -1,4 +1,4 @@
-import getDb, { uuidv4 } from '@/lib/db';
+import { sql, uuidv4 } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 // GET /api/tasks — fetch all tasks
@@ -7,11 +7,14 @@ export async function GET(request) {
     const userId = request.headers.get('x-user-id');
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const db = getDb();
-    const tasks = db
-      .prepare('SELECT * FROM tasks WHERE user_id = ? ORDER BY is_completed ASC, created_at DESC LIMIT 50')
-      .all(userId);
-    return NextResponse.json(tasks);
+    const { rows } = await sql`
+      SELECT * FROM tasks 
+      WHERE user_id = ${userId} 
+      ORDER BY is_completed ASC, created_at DESC 
+      LIMIT 50
+    `;
+
+    return NextResponse.json(rows);
   } catch (err) {
     console.error('Tasks GET error:', err);
     return NextResponse.json([], { status: 200 });
@@ -25,13 +28,13 @@ export async function POST(request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { title, description } = await request.json();
-    const db = getDb();
     const id = uuidv4();
     const now = new Date().toISOString();
 
-    db.prepare(
-      'INSERT INTO tasks (id, user_id, title, description, is_completed, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(id, userId, title, description, 0, now, now);
+    await sql`
+      INSERT INTO tasks (id, user_id, title, description, is_completed, created_at, updated_at) 
+      VALUES (${id}, ${userId}, ${title}, ${description}, 0, ${now}, ${now})
+    `;
 
     return NextResponse.json({ id, title, description, is_completed: 0, created_at: now, updated_at: now });
   } catch (err) {
@@ -47,17 +50,15 @@ export async function PATCH(request) {
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { taskId, isCompleted } = await request.json();
-    const db = getDb();
+    const now = new Date().toISOString();
+    const completedAt = isCompleted ? now : null;
+    const completedValue = isCompleted ? 1 : 0;
 
-    db.prepare(
-      'UPDATE tasks SET is_completed = ?, completed_at = ?, updated_at = ? WHERE id = ? AND user_id = ?'
-    ).run(
-      isCompleted ? 1 : 0,
-      isCompleted ? new Date().toISOString() : null,
-      new Date().toISOString(),
-      taskId,
-      userId
-    );
+    await sql`
+      UPDATE tasks 
+      SET is_completed = ${completedValue}, completed_at = ${completedAt}, updated_at = ${now} 
+      WHERE id = ${taskId} AND user_id = ${userId}
+    `;
 
     return NextResponse.json({ success: true });
   } catch (err) {

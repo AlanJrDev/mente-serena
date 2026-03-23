@@ -1,4 +1,4 @@
-import getDb from '@/lib/db';
+import { sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -8,15 +8,18 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
-    const db = getDb();
-    
-    const user = db.prepare('SELECT id, name, email FROM users WHERE email = ? AND password_hash = ?').get(email, password);
-    if (!user) {
+    const { rows } = await sql`
+      SELECT id, name, email FROM users 
+      WHERE email = ${email} AND password_hash = ${password}
+    `;
+
+    if (rows.length === 0) {
       return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(rows[0]);
   } catch (err) {
+    console.error('Login error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

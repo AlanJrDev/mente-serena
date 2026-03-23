@@ -1,4 +1,4 @@
-import getDb, { uuidv4 } from '@/lib/db';
+import { sql, uuidv4 } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -18,16 +18,21 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    const db = getDb();
-
     // Save user message
-    db.prepare('INSERT INTO messages (id, user_id, role, content, session_id) VALUES (?, ?, ?, ?, ?)')
-      .run(uuidv4(), userId, 'user', message, session_id);
+    const msgId = uuidv4();
+    await sql`
+      INSERT INTO messages (id, user_id, role, content, session_id) 
+      VALUES (${msgId}, ${userId}, 'user', ${message}, ${session_id})
+    `;
 
     // Get recent messages for context
-    const recentMessages = db.prepare(
-      'SELECT role, content FROM messages WHERE user_id = ? AND session_id = ? ORDER BY created_at DESC LIMIT 10'
-    ).all(userId, session_id).reverse();
+    const { rows: recentMessages } = await sql`
+      SELECT role, content FROM messages 
+      WHERE user_id = ${userId} AND session_id = ${session_id} 
+      ORDER BY created_at DESC 
+      LIMIT 10
+    `;
+    recentMessages.reverse();
 
     // Build dynamic system prompt
     let systemPrompt = `Você é TUPI-2P, uma inteligência artificial atuando estritamente como um psicólogo acolhedor e profundo. Seu grande objetivo nesta conversa é INCENTIVAR O DESABAFO.
@@ -44,7 +49,7 @@ DIRETRIZES DE COMPORTAMENTO E ALTA GRAMÁTICA:
 
     // If no API key, use a helpful fallback
     if (!GROQ_API_KEY) {
-      return createFallbackStream(message, db, session_id, userId);
+      return createFallbackStream(message, session_id, userId);
     }
 
     // Call Groq API with streaming
@@ -73,7 +78,7 @@ DIRETRIZES DE COMPORTAMENTO E ALTA GRAMÁTICA:
 
     if (!groqResponse.ok) {
       console.error('Groq API error:', groqResponse.status);
-      return createFallbackStream(message, db, session_id, userId);
+      return createFallbackStream(message, session_id, userId);
     }
 
     // Stream the response
@@ -114,8 +119,11 @@ DIRETRIZES DE COMPORTAMENTO E ALTA GRAMÁTICA:
           }
 
           // Save AI response to database
-          db.prepare('INSERT INTO messages (id, user_id, role, content, thinking, session_id) VALUES (?, ?, ?, ?, ?, ?)')
-            .run(uuidv4(), userId, 'ai', fullContent, fullThinking || null, session_id);
+          const aiMsgId = uuidv4();
+          await sql`
+            INSERT INTO messages (id, user_id, role, content, thinking, session_id) 
+            VALUES (${aiMsgId}, ${userId}, 'ai', ${fullContent}, ${fullThinking || null}, ${session_id})
+          `;
 
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`)
@@ -145,7 +153,7 @@ DIRETRIZES DE COMPORTAMENTO E ALTA GRAMÁTICA:
 }
 
 // Fallback when no API key is configured
-function createFallbackStream(message, db, session_id, userId) {
+function createFallbackStream(message, session_id, userId) {
   const encoder = new TextEncoder();
 
   const responses = [
@@ -177,8 +185,11 @@ function createFallbackStream(message, db, session_id, userId) {
 
       // Save to DB
       try {
-        db.prepare('INSERT INTO messages (id, user_id, role, content, thinking, session_id) VALUES (?, ?, ?, ?, ?, ?)')
-          .run(uuidv4(), userId, 'ai', selectedResponse, thinking, session_id);
+        const aiMsgId = uuidv4();
+        await sql`
+          INSERT INTO messages (id, user_id, role, content, thinking, session_id) 
+          VALUES (${aiMsgId}, ${userId}, 'ai', ${selectedResponse}, ${thinking}, ${session_id})
+        `;
       } catch (e) {
         console.error('DB save error:', e);
       }

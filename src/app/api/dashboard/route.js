@@ -1,4 +1,4 @@
-import getDb from '@/lib/db';
+import { sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 const MOOD_SCORE_MAP = {
@@ -26,19 +26,18 @@ export async function GET(request) {
     const userId = request.headers.get('x-user-id');
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const db = getDb();
     const { searchParams } = new URL(request.url);
     const range = searchParams.get('range') || '30d';
-
     const days = parseInt(range) || 30;
 
-    // Fetch mood logs within range
-    const moodLogs = db.prepare(`
+    // Fetch mood logs within range using Postgres interval
+    const { rows: moodLogs } = await sql`
       SELECT mood, energy, notes, sleep_quality, logged_at 
       FROM mood_logs 
-      WHERE user_id = ? AND logged_at >= datetime('now', ? || ' days')
+      WHERE user_id = ${userId} 
+        AND logged_at >= NOW() - (${days} || ' days')::interval
       ORDER BY logged_at ASC
-    `).all(userId, String(-days));
+    `;
 
     // Stats
     const totalLogs = moodLogs.length;
@@ -61,7 +60,10 @@ export async function GET(request) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
       const dateStr = checkDate.toISOString().split('T')[0];
-      const hasLog = moodLogs.some(m => m.logged_at.startsWith(dateStr));
+      const hasLog = moodLogs.some(m => {
+        const logDate = new Date(m.logged_at).toISOString().split('T')[0];
+        return logDate === dateStr;
+      });
       if (hasLog || i === 0) {
         if (hasLog) streak++;
         else break;
@@ -90,7 +92,7 @@ export async function GET(request) {
       moodScore: MOOD_SCORE_MAP[m.mood] || 5,
     }));
 
-    // Correlation data: Energy x Mood x Sleep (cross-reference)
+    // Correlation data: Energy x Mood x Sleep
     const correlationData = moodLogs.map(m => ({
       date: new Date(m.logged_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
       energy: m.energy,

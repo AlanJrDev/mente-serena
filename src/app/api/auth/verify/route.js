@@ -1,4 +1,4 @@
-import getDb from '@/lib/db';
+import { sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -10,15 +10,15 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Missing user ID' }, { status: 400 });
     }
 
-    const db = getDb();
-    
-    const user = db.prepare('SELECT id, name, email FROM users WHERE id = ?').get(userId);
-    
-    if (!user) {
+    const { rows } = await sql`
+      SELECT id, name, email FROM users WHERE id = ${userId}
+    `;
+
+    if (rows.length === 0) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(user);
+    return NextResponse.json(rows[0]);
   } catch (err) {
     console.error('Verify error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

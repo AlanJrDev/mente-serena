@@ -1,4 +1,4 @@
-import getDb, { uuidv4 } from '@/lib/db';
+import { sql } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -6,22 +6,29 @@ export async function GET(request) {
     const userId = request.headers.get('x-user-id');
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const db = getDb();
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get('session_id');
 
-    let messages;
+    let result;
     if (sessionId) {
-      messages = db
-        .prepare('SELECT role, content, thinking, created_at, session_id FROM messages WHERE user_id = ? AND session_id = ? ORDER BY created_at ASC LIMIT 200')
-        .all(userId, sessionId);
+      result = await sql`
+        SELECT role, content, thinking, created_at, session_id 
+        FROM messages 
+        WHERE user_id = ${userId} AND session_id = ${sessionId} 
+        ORDER BY created_at ASC 
+        LIMIT 200
+      `;
     } else {
-      messages = db
-        .prepare('SELECT role, content, thinking, created_at, session_id FROM messages WHERE user_id = ? ORDER BY created_at ASC LIMIT 500')
-        .all(userId);
+      result = await sql`
+        SELECT role, content, thinking, created_at, session_id 
+        FROM messages 
+        WHERE user_id = ${userId} 
+        ORDER BY created_at ASC 
+        LIMIT 500
+      `;
     }
 
-    return NextResponse.json(messages);
+    return NextResponse.json(result.rows);
   } catch (err) {
     console.error('Messages GET error:', err);
     return NextResponse.json([], { status: 200 });

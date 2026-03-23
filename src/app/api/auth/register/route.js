@@ -1,4 +1,4 @@
-import getDb, { uuidv4 } from '@/lib/db';
+import { sql, uuidv4 } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -8,21 +8,25 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
-    const db = getDb();
-    
-    // Check if exists
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (existing) {
+    // Check if user already exists
+    const { rows: existing } = await sql`
+      SELECT id FROM users WHERE email = ${email}
+    `;
+
+    if (existing.length > 0) {
       return NextResponse.json({ error: 'Email já cadastrado' }, { status: 400 });
     }
 
     const id = uuidv4();
-    // In a real app we would hash the password, but since this is a prototype we'll store basic
-    db.prepare('INSERT INTO users (id, name, email, password_hash) VALUES (?, ?, ?, ?)')
-      .run(id, name, email, password);
+
+    await sql`
+      INSERT INTO users (id, name, email, password_hash) 
+      VALUES (${id}, ${name}, ${email}, ${password})
+    `;
 
     return NextResponse.json({ id, name, email });
   } catch (err) {
+    console.error('Register error:', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
