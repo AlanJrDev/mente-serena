@@ -1336,12 +1336,124 @@ body {
 
 .auth-page {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   background: var(--ds-bg-deep);
   position: relative;
   overflow: hidden;
+  gap: 0;
+}
+
+/* ═══ HERO SPOTLIGHT TITLE ═══ */
+
+.auth-hero-wrapper {
+  --spotlight-x: 50%;
+  --spotlight-y: 50%;
+  --spotlight-opacity: 0;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 20px 40px 16px;
+  cursor: default;
+  user-select: none;
+}
+
+.auth-hero-title {
+  position: relative;
+  display: inline-block;
+  font-size: clamp(2.8rem, 6vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+/* Base layer — subtle translucent text */
+.auth-hero-title-base {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: block;
+}
+
+[data-theme='light'] .auth-hero-title-base {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.06) 0%,
+    rgba(0, 0, 0, 0.03) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Glow overlay — radial gradient spotlight follows mouse */
+.auth-hero-title-glow {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: radial-gradient(
+    circle 140px at var(--spotlight-x) var(--spotlight-y),
+    rgba(77, 107, 254, 1) 0%,
+    rgba(124, 58, 237, 0.9) 20%,
+    rgba(124, 58, 237, 0.4) 40%,
+    rgba(255, 255, 255, 0.08) 65%,
+    transparent 80%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  opacity: var(--spotlight-opacity);
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+[data-theme='light'] .auth-hero-title-glow {
+  background: radial-gradient(
+    circle 140px at var(--spotlight-x) var(--spotlight-y),
+    rgba(77, 107, 254, 1) 0%,
+    rgba(124, 58, 237, 0.9) 20%,
+    rgba(124, 58, 237, 0.5) 40%,
+    rgba(0, 0, 0, 0.05) 65%,
+    transparent 80%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Subtle ambient glow behind the text */
+.auth-hero-title::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60%;
+  height: 80%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(77, 107, 254, 0.06) 0%,
+    transparent 70%
+  );
+  z-index: -1;
+  pointer-events: none;
+  filter: blur(30px);
+}
+
+.auth-hero-subtitle {
+  font-size: var(--ds-font-size-sm);
+  color: var(--ds-text-muted);
+  margin-top: 8px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.6;
 }
 
 /* ── Floating Background Particles ── */
@@ -1811,6 +1923,19 @@ body {
    ════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
+  .auth-hero-wrapper {
+    padding: 12px 20px 12px;
+  }
+  
+  .auth-hero-title {
+    font-size: clamp(2.2rem, 8vw, 3rem);
+  }
+  
+  .auth-hero-subtitle {
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
   .auth-container {
     flex-direction: column;
     min-height: 600px;

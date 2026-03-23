@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ArrowRight, User, Lock, Mail, Loader2, Sparkles, Shield, Heart } from 'lucide-react';
@@ -16,12 +16,53 @@ export default function LoginPage({ onLogin }) {
 
   const containerRef = useRef(null);
   const overlayRef = useRef(null);
+  const titleRef = useRef(null);
+  const spotlightRef = useRef({ x: 50, y: 50 });
+
+  // Mouse spotlight tracking
+  const handleMouseMove = useCallback((e) => {
+    if (!titleRef.current) return;
+    const rect = titleRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    spotlightRef.current = { x, y };
+    titleRef.current.style.setProperty('--spotlight-x', `${x}%`);
+    titleRef.current.style.setProperty('--spotlight-y', `${y}%`);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (!titleRef.current) return;
+    // Smoothly fade out the spotlight
+    titleRef.current.style.setProperty('--spotlight-opacity', '0');
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!titleRef.current) return;
+    titleRef.current.style.setProperty('--spotlight-opacity', '1');
+  }, []);
 
   useGSAP(() => {
+    // Title entrance
+    gsap.from('.auth-hero-title', {
+      y: -30,
+      opacity: 0,
+      duration: 1,
+      ease: 'power3.out',
+      clearProps: 'opacity,transform'
+    });
+    gsap.from('.auth-hero-subtitle', {
+      y: -15,
+      opacity: 0,
+      duration: 0.8,
+      delay: 0.3,
+      ease: 'power3.out',
+      clearProps: 'opacity,transform'
+    });
     gsap.from('.auth-container', {
       scale: 0.95,
       opacity: 0,
       duration: 0.8,
+      delay: 0.2,
       ease: 'power3.out',
       clearProps: 'all'
     });
@@ -29,7 +70,7 @@ export default function LoginPage({ onLogin }) {
       y: 30,
       opacity: 0,
       duration: 0.8,
-      delay: 0.3,
+      delay: 0.5,
       ease: 'power3.out',
       clearProps: 'all'
     });
@@ -38,7 +79,7 @@ export default function LoginPage({ onLogin }) {
       opacity: 0,
       stagger: 0.08,
       duration: 0.6,
-      delay: 0.5,
+      delay: 0.6,
       ease: 'power2.out',
       clearProps: 'all'
     });
@@ -111,6 +152,21 @@ export default function LoginPage({ onLogin }) {
         <div className="auth-particle auth-particle-3" />
         <div className="auth-particle auth-particle-4" />
         <div className="auth-particle auth-particle-5" />
+      </div>
+
+      {/* ═══ HERO TITLE WITH SPOTLIGHT ═══ */}
+      <div
+        className="auth-hero-wrapper"
+        ref={titleRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onMouseEnter={handleMouseEnter}
+      >
+        <h1 className="auth-hero-title">
+          <span className="auth-hero-title-base">Mente Serena</span>
+          <span className="auth-hero-title-glow" aria-hidden="true">Mente Serena</span>
+        </h1>
+        <p className="auth-hero-subtitle">Seu espaço de paz e acolhimento</p>
       </div>
 
       <div className={`auth-container ${isRegister ? 'auth-register-mode' : ''}`}>
@@ -299,10 +355,7 @@ export default function LoginPage({ onLogin }) {
         </div>
       </div>
 
-      {/* Brand watermark */}
-      <div className="auth-brand-watermark">
-        Mente Serena
-      </div>
+
     </div>
   );
 }
