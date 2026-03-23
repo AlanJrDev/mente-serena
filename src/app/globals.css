@@ -1374,8 +1374,8 @@ body {
 .auth-hero-title-base {
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.04) 100%
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.2) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
@@ -1386,8 +1386,8 @@ body {
 [data-theme='light'] .auth-hero-title-base {
   background: linear-gradient(
     135deg,
-    rgba(0, 0, 0, 0.06) 0%,
-    rgba(0, 0, 0, 0.03) 100%
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.15) 100%
   );
   -webkit-background-clip: text;
   background-clip: text;

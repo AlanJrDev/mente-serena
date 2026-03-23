@@ -42,7 +42,7 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState('');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
   const [user, setUser] = useState(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const containerRef = useRef(null);
@@ -67,7 +67,7 @@ export default function Home() {
 
   // Sync theme
   useEffect(() => {
-    const saved = localStorage.getItem('mente-serena-theme') || 'dark';
+    const saved = localStorage.getItem('mente-serena-theme') || 'light';
     setTheme(saved);
   }, []);
 
