@@ -1924,7 +1924,7 @@ body {
 
 @media (max-width: 768px) {
   .auth-hero-wrapper {
-    padding: 12px 20px 12px;
+    padding: 0 20px 24px; /* More space at the bottom to separate from container */
   }
   
   .auth-hero-title {
@@ -1936,10 +1936,45 @@ body {
     letter-spacing: 2px;
   }
 
+  /* Override the mouse-tracking and pulse automatically on mobile */
+  .auth-hero-title-glow {
+    opacity: 0.8 !important;
+    animation: mobileTitlePulse 4s ease-in-out infinite alternate !important;
+    background: radial-gradient(
+      circle 120px at center,
+      rgba(77, 107, 254, 1) 0%,
+      rgba(124, 58, 237, 0.9) 20%,
+      rgba(124, 58, 237, 0.4) 40%,
+      rgba(255, 255, 255, 0.08) 65%,
+      transparent 80%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  [data-theme='light'] .auth-hero-title-glow {
+    background: radial-gradient(
+      circle 120px at center,
+      rgba(77, 107, 254, 1) 0%,
+      rgba(124, 58, 237, 0.9) 20%,
+      rgba(124, 58, 237, 0.5) 40%,
+      rgba(0, 0, 0, 0.05) 65%,
+      transparent 80%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  @keyframes mobileTitlePulse {
+    0% { transform: scale(1); opacity: 0.5; filter: hue-rotate(0deg); }
+    50% { transform: scale(1.05); opacity: 0.9; filter: hue-rotate(15deg); }
+    100% { transform: scale(1); opacity: 0.5; filter: hue-rotate(-15deg); }
+  }
+
   .auth-container {
     flex-direction: column;
     min-height: 600px;
-    max-height: 95vh;
+    max-height: 90vh; /* Reduced to avoid overlapping title on small screens */
     width: 95vw;
     max-width: 450px;
   }
